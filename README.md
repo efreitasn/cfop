@@ -8,7 +8,7 @@ There's a lot of confusion regarding the terms in a CLI. This package aims to us
 A command is always mapped to a function. It can have options, flags, arguments and other commands as well, called subcommands.
 
 ### Option
-An option starts with `-` or `--`. Generally, the `--` is the full version (e.g. `--name`), while the `-` version is a short version (e.g. `-n`). An option always takes an argument, which can only be of int, float or string type. This argument can be added to the option in two ways:
+An option starts with `-` or `--`. Generally, the `--` is the full version (e.g. `--name`), while the `-` version is the alias version (e.g. `-n`). An option always takes an argument, which can only be of int, float or string type. This argument can be added to the option in two ways:
 
 ```
 --opt=20
