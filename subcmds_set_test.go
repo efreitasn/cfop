@@ -2,6 +2,7 @@ package cfp
 
 import (
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -18,42 +19,80 @@ func (mp mockParser) Parse(strs []string) error {
 }
 
 func TestSubcmdsSet(t *testing.T) {
-	fooCh := make(chan []string, 1)
-	fooParser := mockParser{
-		ch: fooCh,
-	}
-	barCh := make(chan []string, 1)
-	barParser := mockParser{
-		ch: barCh,
-	}
-
-	set := NewSubcmdsSet(
-		Subcmd{
-			Name:   "foo",
-			Parser: fooParser,
+	tests := []struct {
+		subcmdsNames []string
+		strs         []string
+		err          error
+	}{
+		{
+			[]string{"foo", "bar"},
+			[]string{"foo", "--bar", "--foobar=barfoo"},
+			nil,
 		},
-		Subcmd{
-			Name:   "bar",
-			Parser: barParser,
+		{
+			[]string{"foo", "bar"},
+			[]string{},
+			ErrMissingSubcmd,
 		},
-	)
-
-	var resStrs []string
-	strs := []string{"foo", "--bar", "--foobar=barfoo"}
-	expectedStrs := strs[1:]
-
-	set.Parse(strs)
-
-	timer := time.NewTimer(time.Second)
-
-	select {
-	case strs := <-fooCh:
-		resStrs = strs
-	case <-timer.C:
-		t.Fatal("timeout")
+		{
+			[]string{"foo", "bar"},
+			[]string{"--some"},
+			ErrUnexpectedOptionOrFlag{
+				OptionOrFlagName: "some",
+				IsAlias:          false,
+			},
+		},
+		{
+			[]string{"foo", "bar"},
+			[]string{"--some=that"},
+			ErrUnexpectedOption{
+				OptionName: "some",
+				IsAlias:    false,
+			},
+		},
 	}
 
-	if !reflect.DeepEqual(resStrs, expectedStrs) {
-		t.Errorf("got %v, want %v", resStrs, expectedStrs)
+	for i, test := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			subcmdsChs := make(map[string]chan []string, len(test.subcmdsNames))
+			subcmdsParsers := make(map[string]Parser, len(test.subcmdsNames))
+			set := NewSubcmdsSet()
+
+			for _, subcmdName := range test.subcmdsNames {
+				subcmdsChs[subcmdName] = make(chan []string, 1)
+				subcmdsParsers[subcmdName] = mockParser{
+					ch: subcmdsChs[subcmdName],
+				}
+				set.Add(Subcmd{
+					Name:   subcmdName,
+					Parser: subcmdsParsers[subcmdName],
+				})
+			}
+
+			err := set.Parse(test.strs)
+			if err != test.err {
+				t.Fatalf("got %v, want %v", err, test.err)
+			}
+
+			if err != nil {
+				return
+			}
+
+			var resStrs []string
+			expectedStrs := test.strs[1:]
+
+			timer := time.NewTimer(time.Second)
+
+			select {
+			case strs := <-subcmdsChs[test.strs[0]]:
+				resStrs = strs
+			case <-timer.C:
+				t.Fatal("timeout")
+			}
+
+			if !reflect.DeepEqual(resStrs, expectedStrs) {
+				t.Errorf("got %v, want %v", resStrs, expectedStrs)
+			}
+		})
 	}
 }

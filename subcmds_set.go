@@ -39,10 +39,29 @@ func (ss *SubcmdsSet) Parse(strs []string) error {
 		return ErrMissingSubcmd
 	}
 
-	subcmdName := strs[0]
-	subcmd, ok := ss.items[subcmdName]
+	str := strs[0]
+
+	if isOptionWithValue(str) {
+		optName, isAlias := extractOptionName(str)
+
+		return ErrUnexpectedOption{
+			OptionName: optName,
+			IsAlias:    isAlias,
+		}
+	}
+
+	if isOptionWithoutValue(str) {
+		optName, isAlias := extractOptionName(str)
+
+		return ErrUnexpectedOptionOrFlag{
+			OptionOrFlagName: optName,
+			IsAlias:          isAlias,
+		}
+	}
+
+	subcmd, ok := ss.items[str]
 	if !ok {
-		return ErrUnknownSubcmd{SubcmdName: subcmdName}
+		return ErrUnknownSubcmd{SubcmdName: str}
 	}
 
 	return subcmd.Parser.Parse(strs[1:])
