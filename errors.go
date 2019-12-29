@@ -72,3 +72,15 @@ type ErrRequiredOptionNotProvided struct {
 func (e ErrRequiredOptionNotProvided) Error() string {
 	return fmt.Sprintf("cfp: required option %v not provided", e.OptionName)
 }
+
+// ErrNoneSubcmdProvided indicates that none subcmd was provided.
+var ErrNoneSubcmdProvided = errors.New("cfp: none subcmd was provided")
+
+// ErrUnknownSubcmd indicates that an unknown subcmd was provided.
+type ErrUnknownSubcmd struct {
+	SubcmdName string
+}
+
+func (e ErrUnknownSubcmd) Error() string {
+	return fmt.Sprintf("cfp: unknown subcmd: %v", e.SubcmdName)
+}
