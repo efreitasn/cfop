@@ -75,9 +75,10 @@ func TestCmd(t *testing.T) {
 				},
 			},
 			strs: []string{"--title", "salary", "180.87"},
-			err: ErrInvalidValueForArgument{
-				ArgumentPos: 0,
-				Value:       "180.87",
+			err: ErrArgumentExpectsDifferentValueType{
+				ArgumentPos:  0,
+				Value:        "180.87",
+				ExpectedType: TermInt,
 			},
 		},
 		{
@@ -110,9 +111,9 @@ func TestCmd(t *testing.T) {
 				},
 			},
 			strs: []string{"-n", "John", "--year=foo", "foobar"},
-			err: ErrInvalidValueForOption{
-				OptionName: "year",
-				Value:      "foo",
+			err: ErrOptionExpectsDifferentValueType{
+				OptionName:   "year",
+				ExpectedType: TermInt,
 			},
 		},
 		{
@@ -129,9 +130,9 @@ func TestCmd(t *testing.T) {
 				},
 			},
 			strs: []string{"-n", "John", "--year", "foo", "foobar"},
-			err: ErrInvalidValueForOption{
-				OptionName: "year",
-				Value:      "foo",
+			err: ErrOptionExpectsDifferentValueType{
+				OptionName:   "year",
+				ExpectedType: TermInt,
 			},
 		},
 		{
@@ -145,7 +146,7 @@ func TestCmd(t *testing.T) {
 				},
 			},
 			strs: []string{"-n", "John", "--year"},
-			err: ErrValueNotProvidedForOption{
+			err: ErrOptionsExpectsAValue{
 				OptionName: "year",
 			},
 		},
@@ -160,7 +161,7 @@ func TestCmd(t *testing.T) {
 				},
 			},
 			strs: []string{"-n", "John", "--year="},
-			err: ErrValueNotProvidedForOption{
+			err: ErrOptionsExpectsAValue{
 				OptionName: "year",
 			},
 		},

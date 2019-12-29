@@ -36,7 +36,7 @@ func (ss *SubcmdsSet) Add(item Subcmd) {
 // Parse parses a slice of strings.
 func (ss *SubcmdsSet) Parse(strs []string) error {
 	if len(strs) == 0 {
-		return ErrNoneSubcmdProvided
+		return ErrMissingSubcmd
 	}
 
 	subcmdName := strs[0]

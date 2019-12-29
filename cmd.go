@@ -256,23 +256,37 @@ func (c *Cmd) Parse(strs []string) error {
 		str := strs[i]
 
 		if isOptionWithValue(str) {
-			optName := extractOptionName(str)
-			opt := c.getOption(optName)
+			optName, isAlias := extractOptionName(str)
+
+			var opt *CmdOption
+
+			if isAlias {
+				opt = c.optionsByAlias[optName]
+			} else {
+				opt = c.options[optName]
+			}
 
 			if opt == nil {
-				return ErrUnexpectedOptionOrFlag{OptionOrFlagName: optName}
+				return ErrUnexpectedOption{
+					OptionName: optName,
+					IsAlias:    isAlias,
+				}
 			}
 
 			optValueStr := extractOptionValue(str)
 			if optValueStr == "" {
-				return ErrValueNotProvidedForOption{OptionName: optName}
+				return ErrOptionsExpectsAValue{
+					OptionName: optName,
+					IsAlias:    isAlias,
+				}
 			}
 
 			optValue, validValue := isValueValidForTermType(opt.T, optValueStr)
 			if !validValue {
-				return ErrInvalidValueForOption{
-					OptionName: optName,
-					Value:      optValueStr,
+				return ErrOptionExpectsDifferentValueType{
+					OptionName:   optName,
+					IsAlias:      isAlias,
+					ExpectedType: opt.T,
 				}
 			}
 
@@ -283,15 +297,31 @@ func (c *Cmd) Parse(strs []string) error {
 		}
 
 		if isOptionWithoutValue(str) {
-			optName := extractOptionName(str)
-			opt := c.getOption(optName)
+			optName, isAlias := extractOptionName(str)
+
+			var opt *CmdOption
+
+			if isAlias {
+				opt = c.optionsByAlias[optName]
+			} else {
+				opt = c.options[optName]
+			}
 
 			if opt == nil {
 				// An option without value could be a flag
-				f := c.getFlag(optName)
+				var f *CmdFlag
+
+				if isAlias {
+					f = c.flagsByAlias[optName]
+				} else {
+					f = c.flags[optName]
+				}
 
 				if f == nil {
-					return ErrUnexpectedOptionOrFlag{OptionOrFlagName: optName}
+					return ErrUnexpectedOptionOrFlag{
+						OptionOrFlagName: optName,
+						IsAlias:          isAlias,
+					}
 				}
 
 				tSet.flagsValues[f.Name] = true
@@ -304,9 +334,10 @@ func (c *Cmd) Parse(strs []string) error {
 				optValueStr := strs[i+1]
 				optValue, validValue := isValueValidForTermType(opt.T, optValueStr)
 				if !validValue {
-					return ErrInvalidValueForOption{
-						OptionName: optName,
-						Value:      optValueStr,
+					return ErrOptionExpectsDifferentValueType{
+						OptionName:   optName,
+						IsAlias:      isAlias,
+						ExpectedType: opt.T,
 					}
 				}
 
@@ -317,7 +348,10 @@ func (c *Cmd) Parse(strs []string) error {
 				continue
 			}
 
-			return ErrValueNotProvidedForOption{OptionName: optName}
+			return ErrOptionsExpectsAValue{
+				OptionName: optName,
+				IsAlias:    isAlias,
+			}
 		}
 
 		// If it reaches this part, it means it's not an option with value
@@ -335,9 +369,10 @@ func (c *Cmd) Parse(strs []string) error {
 				i++
 				continue
 			} else {
-				return ErrInvalidValueForArgument{
-					ArgumentPos: nextArgPos,
-					Value:       str,
+				return ErrArgumentExpectsDifferentValueType{
+					ArgumentPos:  nextArgPos,
+					ExpectedType: arg.T,
+					Value:        str,
 				}
 			}
 		} else {

@@ -14,32 +14,63 @@ var ErrInvalidFlagNameOrAlias = errors.New("cfp: invalid flag name or flag alias
 // ErrInvalidTermType indicates that an invalid term type was provided.
 var ErrInvalidTermType = errors.New("cfp: invalid term type")
 
-// ErrUnexpectedOptionOrFlag indicates that an invalid option or flag was provided.
+// The errors below are those that are shown to the user.
+
+// ErrUnexpectedOption indicates that an unexpected option or flag was provided.
+type ErrUnexpectedOption struct {
+	OptionName string
+	IsAlias    bool
+}
+
+func (e ErrUnexpectedOption) Error() string {
+	if e.IsAlias {
+		return fmt.Sprintf("unexpected -%v option", e.OptionName)
+	}
+
+	return fmt.Sprintf("unexpected --%v option", e.OptionName)
+}
+
+// ErrUnexpectedOptionOrFlag indicates that an unexpected option or flag was provided.
 type ErrUnexpectedOptionOrFlag struct {
 	OptionOrFlagName string
+	IsAlias          bool
 }
 
 func (e ErrUnexpectedOptionOrFlag) Error() string {
-	return fmt.Sprintf("cfp: %v is not a valid option or flag", e.OptionOrFlagName)
+	if e.IsAlias {
+		return fmt.Sprintf("unexpected -%v option/flag", e.OptionOrFlagName)
+	}
+
+	return fmt.Sprintf("unexpected --%v option/flag", e.OptionOrFlagName)
 }
 
-// ErrInvalidValueForOption indicates that an invalid value was provided to an option.
-type ErrInvalidValueForOption struct {
+// ErrOptionExpectsDifferentValueType indicates that an option expects a value of a type different than the one provided.
+type ErrOptionExpectsDifferentValueType struct {
+	OptionName   string
+	ExpectedType TermType
+	IsAlias      bool
+}
+
+func (e ErrOptionExpectsDifferentValueType) Error() string {
+	if e.IsAlias {
+		return fmt.Sprintf("-%v option expects a value of type %v", e.OptionName, e.ExpectedType)
+	}
+
+	return fmt.Sprintf("--%v option expects a value of type %v", e.OptionName, e.ExpectedType)
+}
+
+// ErrOptionsExpectsAValue indicates that an option expects a value, but one wasn't provided.
+type ErrOptionsExpectsAValue struct {
 	OptionName string
-	Value      string
+	IsAlias    bool
 }
 
-func (e ErrInvalidValueForOption) Error() string {
-	return fmt.Sprintf("cfp: %v is an invalid value for %v option", e.Value, e.OptionName)
-}
+func (e ErrOptionsExpectsAValue) Error() string {
+	if e.IsAlias {
+		return fmt.Sprintf("-%v option expects a value", e.OptionName)
+	}
 
-// ErrValueNotProvidedForOption indicates that an option is passed but its value isn't.
-type ErrValueNotProvidedForOption struct {
-	OptionName string
-}
-
-func (e ErrValueNotProvidedForOption) Error() string {
-	return fmt.Sprintf("cfp: value not provided for %v option", e.OptionName)
+	return fmt.Sprintf("--%v option expects a value", e.OptionName)
 }
 
 // ErrUnexpectedArgument indicates that an unexpected argument was provided.
@@ -48,21 +79,22 @@ type ErrUnexpectedArgument struct {
 }
 
 func (e ErrUnexpectedArgument) Error() string {
-	return fmt.Sprintf("cfp: unexpected argument: %v", e.Argument)
+	return fmt.Sprintf("unexpected argument: %v", e.Argument)
 }
 
-// ErrInvalidValueForArgument indicates that an invalid value was provided to an argument.
-type ErrInvalidValueForArgument struct {
-	ArgumentPos int
-	Value       string
+// ErrArgumentExpectsDifferentValueType indicates that an argument expects a value of a type different than the one provided.
+type ErrArgumentExpectsDifferentValueType struct {
+	ArgumentPos  int
+	ExpectedType TermType
+	Value        string
 }
 
-func (e ErrInvalidValueForArgument) Error() string {
-	return fmt.Sprintf("cfp: %v is an invalid value for argument at %v", e.Value, e.ArgumentPos)
+func (e ErrArgumentExpectsDifferentValueType) Error() string {
+	return fmt.Sprintf("the argument at %v (%v) expects a value of type %v", e.ArgumentPos, e.Value, e.ExpectedType)
 }
 
 // ErrMissingArguments indicates that not all arguments were provided.
-var ErrMissingArguments = errors.New("cfp: there are missing arguments")
+var ErrMissingArguments = errors.New("missing argument(s)")
 
 // ErrRequiredOptionNotProvided indicates that a required option wasn't provided.
 type ErrRequiredOptionNotProvided struct {
@@ -70,11 +102,11 @@ type ErrRequiredOptionNotProvided struct {
 }
 
 func (e ErrRequiredOptionNotProvided) Error() string {
-	return fmt.Sprintf("cfp: required option %v not provided", e.OptionName)
+	return fmt.Sprintf("--%v option is required", e.OptionName)
 }
 
-// ErrNoneSubcmdProvided indicates that none subcmd was provided.
-var ErrNoneSubcmdProvided = errors.New("cfp: none subcmd was provided")
+// ErrMissingSubcmd indicates that a subcmd wasn't provided.
+var ErrMissingSubcmd = errors.New("missing subcmd")
 
 // ErrUnknownSubcmd indicates that an unknown subcmd was provided.
 type ErrUnknownSubcmd struct {
@@ -82,5 +114,5 @@ type ErrUnknownSubcmd struct {
 }
 
 func (e ErrUnknownSubcmd) Error() string {
-	return fmt.Sprintf("cfp: unknown subcmd: %v", e.SubcmdName)
+	return fmt.Sprintf("unknown subcmd: %v", e.SubcmdName)
 }

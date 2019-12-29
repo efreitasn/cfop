@@ -48,20 +48,27 @@ func TestIsOptionWithoutValue(t *testing.T) {
 
 func TestExtractOptionName(t *testing.T) {
 	tests := []struct {
-		str string
-		res string
+		str     string
+		res     string
+		isAlias bool
 	}{
-		{"--opt=300", "opt"},
-		{"--opt=", "opt"},
-		{"--opt", "opt"},
+		{"--opt=300", "opt", false},
+		{"--opt=", "opt", false},
+		{"--opt", "opt", false},
+		{"-o", "o", true},
+		{"-o=saas", "o", true},
 	}
 
 	for i, test := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			res := extractOptionName(test.str)
+			res, isAlias := extractOptionName(test.str)
 
 			if res != test.res {
 				t.Errorf("got %v, want %v", res, test.res)
+			}
+
+			if isAlias != test.isAlias {
+				t.Errorf("got %v, want %v", isAlias, test.isAlias)
 			}
 		})
 	}

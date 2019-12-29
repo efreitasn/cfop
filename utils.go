@@ -1,8 +1,10 @@
 package cfp
 
-import "regexp"
-
-import "strconv"
+import (
+	"regexp"
+	"strconv"
+	"strings"
+)
 
 var optionWithValueRegExp = regexp.MustCompile("^--?((?:[a-zA-Z]|[0-9])+)=(.+)?$")
 var optionWithoutValueRegExp = regexp.MustCompile("^--?((?:[a-zA-Z]|[0-9])+)$")
@@ -17,14 +19,16 @@ func isOptionWithoutValue(str string) bool {
 	return optionWithoutValueRegExp.MatchString(str)
 }
 
-func extractOptionName(str string) string {
+func extractOptionName(str string) (name string, isAlias bool) {
 	matches := optionWithOrWithoutValueRegExp.FindStringSubmatch(str)
 
 	if len(matches) < 2 {
-		return ""
+		return "", false
 	}
 
-	return matches[1]
+	name = matches[1]
+
+	return name, !strings.HasPrefix(str, "--")
 }
 
 func extractOptionValue(str string) string {
