@@ -1,5 +1,12 @@
 package cfp
 
+import (
+	"fmt"
+	"strings"
+
+	"github.com/efreitasn/customo"
+)
+
 // TermType is the type of a cmd term.
 type TermType string
 
@@ -101,25 +108,30 @@ func (ct *CmdTermsSet) GetArgFloat(n int) float64 {
 
 // CmdOption is a cmd option.
 type CmdOption struct {
-	// Name is used with --.
+	// Name is used with -- and is case-insenstive.
 	Name string
 	// Alias is used with -.
-	Alias    string
-	T        TermType
-	Required bool
+	Alias       string
+	Description string
+	T           TermType
+	Required    bool
 }
 
 // CmdFlag is a cmd flag.
 type CmdFlag struct {
-	// Name is used with --.
+	// Name is used with -- and is case-insenstive.
 	Name string
 	// Alias is used with -.
-	Alias string
+	Alias       string
+	Description string
 }
 
 // CmdArg is a cmd argument.
 type CmdArg struct {
-	T TermType
+	// Name is used when printing the help message and is case-insenstive.
+	Name        string
+	Description string
+	T           TermType
 }
 
 // CmdConfig is a config used to create a cmd.
@@ -155,8 +167,16 @@ func NewCmd(cc CmdConfig) *Cmd {
 		for i := range cc.Options {
 			opt := cc.Options[i]
 
-			if opt.Name == "" || !isOptionWithoutValue("--"+opt.Name) || (opt.Alias != "" && !isOptionWithoutValue("-"+opt.Alias)) {
+			if opt.Name == "" ||
+				!isOptionWithoutValue("--"+opt.Name) ||
+				(opt.Alias != "" && (strings.HasPrefix(opt.Alias, "-") || !isOptionWithoutValue("-"+opt.Alias))) {
 				panic(ErrInvalidOptionNameOrAlias)
+			}
+
+			opt.Name = strings.ToLower(opt.Name)
+
+			if opt.T == "" {
+				panic(ErrMissingTermTypeForTerm{Term: opt.Name})
 			}
 
 			options[opt.Name] = &opt
@@ -166,6 +186,7 @@ func NewCmd(cc CmdConfig) *Cmd {
 			}
 
 			if opt.Alias != "" {
+				opt.Alias = strings.ToLower(opt.Alias)
 				optionsByAlias[opt.Alias] = &opt
 			}
 		}
@@ -179,9 +200,11 @@ func NewCmd(cc CmdConfig) *Cmd {
 				panic(ErrInvalidFlagNameOrAlias)
 			}
 
+			flag.Name = strings.ToLower(flag.Name)
 			flags[flag.Name] = &flag
 
 			if flag.Alias != "" {
+				flag.Alias = strings.ToLower(flag.Alias)
 				flagsByAlias[flag.Alias] = &flag
 			}
 		}
@@ -190,6 +213,16 @@ func NewCmd(cc CmdConfig) *Cmd {
 	if cc.Args != nil {
 		for i := range cc.Args {
 			arg := cc.Args[i]
+
+			if arg.Name == "" {
+				panic(ErrInvalidArgumentName{ArgumentPos: i})
+			}
+
+			arg.Name = strings.ToLower(arg.Name)
+
+			if arg.T == "" {
+				panic(ErrMissingTermTypeForTerm{Term: arg.Name})
+			}
 
 			args = append(args, &arg)
 		}
@@ -243,7 +276,7 @@ func (c *Cmd) getArg(n int) *CmdArg {
 }
 
 // Parse parses a slice of strings.
-func (c *Cmd) Parse(strs []string) error {
+func (c *Cmd) Parse(pp parentParser, strs []string) error {
 	tSet := &CmdTermsSet{
 		cmd:           c,
 		optionsValues: make(map[string]interface{}),
@@ -254,6 +287,12 @@ func (c *Cmd) Parse(strs []string) error {
 
 	for i < len(strs) {
 		str := strs[i]
+
+		if isHelpFlag(str) {
+			printHelp(c, pp)
+
+			return nil
+		}
 
 		if isOptionWithValue(str) {
 			optName, isAlias := extractOptionName(str)
@@ -371,6 +410,7 @@ func (c *Cmd) Parse(strs []string) error {
 			} else {
 				return ErrArgumentExpectsDifferentValueType{
 					ArgumentPos:  nextArgPos,
+					ArgumentName: arg.Name,
 					ExpectedType: arg.T,
 					Value:        str,
 				}
@@ -393,4 +433,177 @@ func (c *Cmd) Parse(strs []string) error {
 	c.fn(tSet)
 
 	return nil
+}
+
+func (c *Cmd) help(pp parentParser) string {
+	numCols, err := getTermNumCols()
+	if err != nil {
+		numCols = 67
+	}
+
+	sb := strings.Builder{}
+
+	// Parent cmd's description.
+	switch p := pp.parser.(type) {
+	case *SubcmdsSet:
+		if item := p.items[pp.cmds[len(pp.cmds)-1]]; item.Description != "" {
+			sb.WriteString(item.Description + "\n\n")
+		}
+	case *rootCmd:
+		if p.description != "" {
+			sb.WriteString(p.description + "\n\n")
+		}
+	}
+
+	sb.WriteString(fmt.Sprintf("Usage: %v", strings.Join(pp.cmds, " ")))
+
+	hasArgs := c.args != nil && len(c.args) > 0
+	hasRequiredOptions := c.requiredOptions != nil && len(c.requiredOptions) > 0
+	hasOptionalOptions := c.options != nil && len(c.options) > 0 && len(c.requiredOptions) != len(c.options)
+	hasFlags := c.flags != nil && len(c.flags) > 0
+
+	largestArgHelpNameLen := 0
+
+	if hasArgs {
+		for _, arg := range c.args {
+			helpName := "<" + arg.Name + ">"
+
+			if len(helpName) > largestArgHelpNameLen {
+				largestArgHelpNameLen = len(helpName)
+			}
+
+			sb.WriteString(" " + helpName)
+		}
+	}
+
+	if hasRequiredOptions {
+		sb.WriteString(" OPTIONS")
+	}
+
+	if hasOptionalOptions {
+		sb.WriteString(" [OPTIONS]")
+	}
+
+	if hasFlags {
+		sb.WriteString(" [FLAGS]")
+	}
+
+	sb.WriteString("\n")
+
+	// Arguments
+	sb.WriteString("\n")
+
+	for _, arg := range c.args {
+		argNameUnstyled := "<" + arg.Name + ">"
+		argNameStyled := customo.Format(argNameUnstyled, customo.AttrBold)
+		sb.WriteString(argNameStyled)
+
+		if arg.Description != "" {
+			descripFormatted := breakStringWithPadding(
+				numberOfSpacesNameAndDescription+largestArgHelpNameLen,
+				numCols,
+				' ',
+				arg.Description,
+			)
+
+			sb.Write([]byte(descripFormatted[len(argNameUnstyled):]))
+		}
+
+		sb.WriteString("\n")
+	}
+
+	// Largest option or flag.
+	largestOptionOrFlagHelpNameUnstyledLen := 0
+
+	for _, option := range c.options {
+		_, helpNameUnstyled := buildOptionOrFlagHelpName(option.Name, option.Alias)
+		if len(helpNameUnstyled) > largestOptionOrFlagHelpNameUnstyledLen {
+			largestOptionOrFlagHelpNameUnstyledLen = len(helpNameUnstyled)
+		}
+	}
+
+	for _, flag := range c.flags {
+		_, helpNameUnstyled := buildOptionOrFlagHelpName(flag.Name, flag.Alias)
+		if len(helpNameUnstyled) > largestOptionOrFlagHelpNameUnstyledLen {
+			largestOptionOrFlagHelpNameUnstyledLen = len(helpNameUnstyled)
+		}
+	}
+
+	// Required options
+	if hasRequiredOptions {
+		sb.WriteString("\n")
+		sb.WriteString("OPTIONS is one or more of:\n")
+
+		for _, option := range c.requiredOptions {
+			helpNameStyled, helpNameUnstyled := buildOptionOrFlagHelpName(option.Name, option.Alias)
+			sb.WriteString(helpIndentation + helpNameStyled)
+
+			if option.Description != "" {
+				descripFormatted := breakStringWithPadding(
+					len(helpIndentation)+numberOfSpacesNameAndDescription+largestOptionOrFlagHelpNameUnstyledLen,
+					numCols,
+					' ',
+					option.Description,
+				)
+
+				sb.Write([]byte(descripFormatted[len(helpNameUnstyled)+len(helpIndentation):]))
+			}
+
+			sb.WriteString("\n")
+		}
+	}
+
+	// Optional options
+	if hasOptionalOptions {
+		sb.WriteString("\n")
+		sb.WriteString("[OPTIONS] is one or more of:\n")
+
+		for _, option := range c.options {
+			if option.Required {
+				continue
+			}
+
+			helpNameStyled, helpNameUnstyled := buildOptionOrFlagHelpName(option.Name, option.Alias)
+			sb.WriteString(helpIndentation + helpNameStyled)
+
+			if option.Description != "" {
+				descripFormatted := breakStringWithPadding(
+					len(helpIndentation)+numberOfSpacesNameAndDescription+largestOptionOrFlagHelpNameUnstyledLen,
+					numCols,
+					' ',
+					option.Description,
+				)
+
+				sb.Write([]byte(descripFormatted[len(helpNameUnstyled)+len(helpIndentation):]))
+			}
+
+			sb.WriteString("\n")
+		}
+	}
+
+	// Flags
+	if hasFlags {
+		sb.WriteString("\n")
+		sb.WriteString("[FLAGS] is one or more of:\n")
+
+		for _, flag := range c.flags {
+			helpNameStyled, helpNameUnstyled := buildOptionOrFlagHelpName(flag.Name, flag.Alias)
+			sb.WriteString(helpIndentation + helpNameStyled)
+
+			if flag.Description != "" {
+				descripFormatted := breakStringWithPadding(
+					len(helpIndentation)+numberOfSpacesNameAndDescription+largestOptionOrFlagHelpNameUnstyledLen,
+					numCols,
+					' ',
+					flag.Description,
+				)
+
+				sb.Write([]byte(descripFormatted[len(helpNameUnstyled)+len(helpIndentation):]))
+			}
+
+			sb.WriteString("\n")
+		}
+	}
+
+	return sb.String()
 }

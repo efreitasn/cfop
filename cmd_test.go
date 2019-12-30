@@ -22,15 +22,15 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Options: []CmdOption{
-					{"name", "n", TermString, false},
-					{"year", "y", TermInt, true},
-					{"salary", "sl", TermFloat, true},
+					{"name", "n", "", TermString, false},
+					{"year", "y", "", TermInt, true},
+					{"salary", "sl", "", TermFloat, true},
 				},
 				Flags: []CmdFlag{
-					{"line", "l"},
+					{"line", "l", ""},
 				},
 				Args: []CmdArg{
-					{TermString},
+					{"First", "", TermString},
 				},
 			},
 			strs: []string{"-n", "John", "-y=1990", "foobar", "-l", "--salary", "500.85"},
@@ -52,10 +52,10 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Options: []CmdOption{
-					{"title", "t", TermString, false},
+					{"title", "t", "", TermString, false},
 				},
 				Args: []CmdArg{
-					{TermFloat},
+					{"First", "", TermFloat},
 				},
 			},
 			strs: []string{"--title", "salary", "180.87"},
@@ -68,15 +68,16 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Options: []CmdOption{
-					{"title", "t", TermString, false},
+					{"title", "t", "", TermString, false},
 				},
 				Args: []CmdArg{
-					{TermInt},
+					{"First", "", TermInt},
 				},
 			},
 			strs: []string{"--title", "salary", "180.87"},
 			err: ErrArgumentExpectsDifferentValueType{
 				ArgumentPos:  0,
+				ArgumentName: "first",
 				Value:        "180.87",
 				ExpectedType: TermInt,
 			},
@@ -84,10 +85,10 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Options: []CmdOption{
-					{"title", "t", TermString, false},
+					{"title", "t", "", TermString, false},
 				},
 				Args: []CmdArg{
-					{TermInt},
+					{"First", "", TermInt},
 				},
 			},
 			strs: []string{"--title", "first", "985"},
@@ -100,14 +101,14 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Options: []CmdOption{
-					{"name", "n", TermString, false},
-					{"year", "y", TermInt, true},
+					{"name", "n", "", TermString, false},
+					{"year", "y", "", TermInt, true},
 				},
 				Flags: []CmdFlag{
-					{"line", "l"},
+					{"line", "l", ""},
 				},
 				Args: []CmdArg{
-					{TermString},
+					{"First", "", TermString},
 				},
 			},
 			strs: []string{"-n", "John", "--year=foo", "foobar"},
@@ -119,14 +120,14 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Options: []CmdOption{
-					{"name", "n", TermString, false},
-					{"year", "y", TermInt, true},
+					{"name", "n", "", TermString, false},
+					{"year", "y", "", TermInt, true},
 				},
 				Flags: []CmdFlag{
-					{"line", "l"},
+					{"line", "l", ""},
 				},
 				Args: []CmdArg{
-					{TermString},
+					{"First", "", TermString},
 				},
 			},
 			strs: []string{"-n", "John", "--year", "foo", "foobar"},
@@ -138,11 +139,11 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Options: []CmdOption{
-					{"name", "n", TermString, false},
-					{"year", "y", TermInt, true},
+					{"name", "n", "", TermString, false},
+					{"year", "y", "", TermInt, true},
 				},
 				Flags: []CmdFlag{
-					{"line", "l"},
+					{"line", "l", ""},
 				},
 			},
 			strs: []string{"-n", "John", "--year"},
@@ -153,11 +154,11 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Options: []CmdOption{
-					{"name", "n", TermString, false},
-					{"year", "y", TermInt, true},
+					{"name", "n", "", TermString, false},
+					{"year", "y", "", TermInt, true},
 				},
 				Flags: []CmdFlag{
-					{"line", "l"},
+					{"line", "l", ""},
 				},
 			},
 			strs: []string{"-n", "John", "--year="},
@@ -168,14 +169,14 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Options: []CmdOption{
-					{"name", "n", TermString, false},
-					{"year", "y", TermInt, true},
+					{"name", "n", "", TermString, false},
+					{"year", "y", "", TermInt, true},
 				},
 				Flags: []CmdFlag{
-					{"line", "l"},
+					{"line", "l", ""},
 				},
 				Args: []CmdArg{
-					{TermString},
+					{"First", "", TermString},
 				},
 			},
 			strs: []string{"-n", "John", "--year=1990", "--what", "foobar"},
@@ -184,11 +185,11 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Options: []CmdOption{
-					{"name", "n", TermString, false},
-					{"year", "y", TermInt, true},
+					{"name", "n", "", TermString, false},
+					{"year", "y", "", TermInt, true},
 				},
 				Flags: []CmdFlag{
-					{"line", "l"},
+					{"line", "l", ""},
 				},
 			},
 			strs: []string{"-n", "John", "--year=1990", "foobar"},
@@ -197,11 +198,11 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Args: []CmdArg{
-					{TermFloat},
-					{TermInt},
+					{"First", "", TermFloat},
+					{"Second", "", TermInt},
 				},
 				Flags: []CmdFlag{
-					{"line", "l"},
+					{"line", "l", ""},
 				},
 			},
 			strs: []string{"-l"},
@@ -210,10 +211,10 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Args: []CmdArg{
-					{TermInt},
+					{"First", "", TermInt},
 				},
 				Options: []CmdOption{
-					{"name", "n", TermString, true},
+					{"name", "n", "", TermString, true},
 				},
 			},
 			strs: []string{"20"},
@@ -237,7 +238,12 @@ func TestCmd(t *testing.T) {
 
 			cmd := NewCmd(newConfig)
 
-			err := cmd.Parse(test.strs)
+			err := cmd.Parse(parentParser{
+				parser: &rootCmd{
+					name: "testing",
+				},
+				cmds: []string{"testing"},
+			}, test.strs)
 
 			if err != test.err {
 				t.Fatalf("got %v, want %v", err, test.err)

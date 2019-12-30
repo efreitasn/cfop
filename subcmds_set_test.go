@@ -12,7 +12,7 @@ type mockParser struct {
 	ch chan<- []string
 }
 
-func (mp mockParser) Parse(strs []string) error {
+func (mp mockParser) Parse(pp parentParser, strs []string) error {
 	mp.ch <- strs
 
 	return nil
@@ -69,7 +69,12 @@ func TestSubcmdsSet(t *testing.T) {
 				})
 			}
 
-			err := set.Parse(test.strs)
+			err := set.Parse(parentParser{
+				parser: &rootCmd{
+					name: "testing",
+				},
+				cmds: []string{"testing"},
+			}, test.strs)
 			if err != test.err {
 				t.Fatalf("got %v, want %v", err, test.err)
 			}

@@ -2,6 +2,7 @@ package cfp
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -143,6 +144,63 @@ func TestIsValueValidForTermType(t *testing.T) {
 
 			if val != test.resVal {
 				t.Errorf("got %v, want %v", val, test.resVal)
+			}
+		})
+	}
+}
+
+func TestIsHelpFlag(t *testing.T) {
+	tests := []struct {
+		str string
+		res bool
+	}{
+		{"--foo", false},
+		{"--help", true},
+		{"-h", true},
+		{"-help", false},
+		{"--h", false},
+		{"some", false},
+	}
+
+	for i, test := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			res := isHelpFlag(test.str)
+
+			if res != test.res {
+				t.Errorf("got %v, want %v", res, test.res)
+			}
+		})
+	}
+}
+
+func TestBreakStringWithPadding(t *testing.T) {
+	tests := []struct {
+		pad             int
+		maxCharsPerLine int
+		str             string
+		padChar         rune
+		res             string
+	}{
+		{
+			10,
+			20,
+			"foo bar foo bar",
+			' ',
+			strings.Repeat(" ", 10) + "foo bar fo\n" + strings.Repeat(" ", 10) + "o bar",
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			res := breakStringWithPadding(
+				test.pad,
+				test.maxCharsPerLine,
+				test.padChar,
+				test.str,
+			)
+
+			if res != test.res {
+				t.Errorf("got %v, want %v", []byte(res), []byte(test.res))
 			}
 		})
 	}
