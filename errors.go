@@ -1,4 +1,4 @@
-package cfp
+package cfop
 
 import (
 	"errors"
@@ -6,25 +6,25 @@ import (
 )
 
 // ErrInvalidOptionNameOrAlias indicates that an invalid option name or invalid option alias was provided.
-var ErrInvalidOptionNameOrAlias = errors.New("cfp: invalid option name or option alias")
+var ErrInvalidOptionNameOrAlias = errors.New("cfop: invalid option name or option alias")
 
 // ErrInvalidFlagNameOrAlias indicates that an invalid flag name or invalid flag alias was provided.
-var ErrInvalidFlagNameOrAlias = errors.New("cfp: invalid flag name or flag alias")
+var ErrInvalidFlagNameOrAlias = errors.New("cfop: invalid flag name or flag alias")
 
 // ErrInvalidTermType indicates that an invalid term type was provided.
-var ErrInvalidTermType = errors.New("cfp: invalid term type")
+var ErrInvalidTermType = errors.New("cfop: invalid term type")
 
 // ErrMissingRootCmdName indicates that a name for the root cmd wasn't provided.
-var ErrMissingRootCmdName = errors.New("cfp: missing name for root cmd")
+var ErrMissingRootCmdName = errors.New("cfop: missing name for root cmd")
 
 // ErrMissingSubcmdName indicates that a name for a subcmd wasn't provided.
-var ErrMissingSubcmdName = errors.New("cfp: missing name for subcmd")
+var ErrMissingSubcmdName = errors.New("cfop: missing name for subcmd")
 
 // ErrMissingSubcmdParser indicates that a parser for a subcmd wasn't provided.
-var ErrMissingSubcmdParser = errors.New("cfp: missing parser for subcmd")
+var ErrMissingSubcmdParser = errors.New("cfop: missing parser for subcmd")
 
 // ErrMissingCmdFn indicates that a function for a cmd wasn't provided.
-var ErrMissingCmdFn = errors.New("cfp: missing function for cmd")
+var ErrMissingCmdFn = errors.New("cfop: missing function for cmd")
 
 // ErrMissingTermTypeForTerm indicates that a term's type wasn't provided.
 type ErrMissingTermTypeForTerm struct {
@@ -32,7 +32,7 @@ type ErrMissingTermTypeForTerm struct {
 }
 
 func (e ErrMissingTermTypeForTerm) Error() string {
-	return fmt.Sprintf("cfp: type not provided for term: %v", e.Term)
+	return fmt.Sprintf("cfop: type not provided for term: %v", e.Term)
 }
 
 // ErrInvalidArgumentName indicates that an invalid argument name was provided.
@@ -41,7 +41,7 @@ type ErrInvalidArgumentName struct {
 }
 
 func (e ErrInvalidArgumentName) Error() string {
-	return fmt.Sprintf("cfp: name of argument at %v is invalid", e.ArgumentPos)
+	return fmt.Sprintf("cfop: name of argument at %v is invalid", e.ArgumentPos)
 }
 
 // The errors below are those that are shown to the user.

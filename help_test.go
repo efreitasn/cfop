@@ -1,4 +1,4 @@
-package cfp
+package cfop
 
 import (
 	"strconv"

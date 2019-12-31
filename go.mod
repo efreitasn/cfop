@@ -1,4 +1,4 @@
-module github.com/efreitasn/cfp
+module github.com/efreitasn/cfop
 
 go 1.13
 

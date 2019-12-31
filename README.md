@@ -1,5 +1,5 @@
-# cfp
-cfp is a package to help build CLIs in go.
+# cfop
+cfop is a package to help build CLIs in go.
 
 ## Naming
 There's a lot of confusion regarding the terms in a CLI. This package aims to use a nomenclature that is well-known and doesn't present any ambiguity. The nomenclature is as follow:
