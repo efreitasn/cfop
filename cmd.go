@@ -3,8 +3,6 @@ package cfp
 import (
 	"fmt"
 	"strings"
-
-	"github.com/efreitasn/customo"
 )
 
 // TermType is the type of a cmd term.
@@ -22,13 +20,14 @@ type CmdTermsSet struct {
 	cmd           *Cmd
 	optionsValues map[string]interface{}
 	flagsValues   map[string]bool
-	args          []interface{}
+	argsValues    map[string]interface{}
 }
 
 // GetOptString returns the value of an option of type string.
 // name can be either the option's name or the option's alias.
 // If the option doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetOptString(name string) string {
+	name = strings.ToLower(name)
 	opt := ct.cmd.getOption(name)
 	if opt == nil || opt.T != TermString {
 		return ""
@@ -41,6 +40,7 @@ func (ct *CmdTermsSet) GetOptString(name string) string {
 // name can be either the option's name or the option's alias.
 // If the option doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetOptInt(name string) int {
+	name = strings.ToLower(name)
 	opt := ct.cmd.getOption(name)
 	if opt == nil || opt.T != TermInt {
 		return 0
@@ -53,6 +53,7 @@ func (ct *CmdTermsSet) GetOptInt(name string) int {
 // name can be either the option's name or the option's alias.
 // If the option doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetOptFloat(name string) float64 {
+	name = strings.ToLower(name)
 	opt := ct.cmd.getOption(name)
 	if opt == nil || opt.T != TermFloat {
 		return 0
@@ -65,6 +66,7 @@ func (ct *CmdTermsSet) GetOptFloat(name string) float64 {
 // name can be either the flag's name or the flag's alias.
 // If the flag doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetFlag(name string) bool {
+	name = strings.ToLower(name)
 	f := ct.cmd.getFlag(name)
 	if f == nil {
 		return false
@@ -75,42 +77,45 @@ func (ct *CmdTermsSet) GetFlag(name string) bool {
 
 // GetArgString returns the value of the argument at n of type string.
 // If the argument doesn't exist, its zero value is returned.
-func (ct *CmdTermsSet) GetArgString(n int) string {
-	arg := ct.cmd.getArg(n)
+func (ct *CmdTermsSet) GetArgString(name string) string {
+	name = strings.ToLower(name)
+	arg := ct.cmd.getArgByName(name)
 	if arg == nil || arg.T != TermString {
 		return ""
 	}
 
-	return (ct.args[n]).(string)
+	return (ct.argsValues[name]).(string)
 }
 
 // GetArgInt returns the value of the argument at n of type intger.
 // If the argument doesn't exist, its zero value is returned.
-func (ct *CmdTermsSet) GetArgInt(n int) int {
-	arg := ct.cmd.getArg(n)
+func (ct *CmdTermsSet) GetArgInt(name string) int {
+	name = strings.ToLower(name)
+	arg := ct.cmd.getArgByName(name)
 	if arg == nil || arg.T != TermInt {
 		return 0
 	}
 
-	return (ct.args[n]).(int)
+	return (ct.argsValues[name]).(int)
 }
 
 // GetArgFloat returns the value of the argument at n of type float.
 // If the argument doesn't exist, its zero value is returned.
-func (ct *CmdTermsSet) GetArgFloat(n int) float64 {
-	arg := ct.cmd.getArg(n)
+func (ct *CmdTermsSet) GetArgFloat(name string) float64 {
+	name = strings.ToLower(name)
+	arg := ct.cmd.getArgByName(name)
 	if arg == nil || arg.T != TermFloat {
 		return 0
 	}
 
-	return (ct.args[n]).(float64)
+	return (ct.argsValues[name]).(float64)
 }
 
 // CmdOption is a cmd option.
 type CmdOption struct {
 	// Name is used with -- and is case-insenstive.
 	Name string
-	// Alias is used with -.
+	// Alias is used with - and is case-insenstive.
 	Alias       string
 	Description string
 	T           TermType
@@ -121,7 +126,7 @@ type CmdOption struct {
 type CmdFlag struct {
 	// Name is used with -- and is case-insenstive.
 	Name string
-	// Alias is used with -.
+	// Alias is used with - and is case-insenstive.
 	Alias       string
 	Description string
 }
@@ -150,30 +155,37 @@ type Cmd struct {
 	requiredOptions []*CmdOption
 	flags           map[string]*CmdFlag
 	flagsByAlias    map[string]*CmdFlag
-	args            []*CmdArg
+	argsByPos       []*CmdArg
+	argsByName      map[string]*CmdArg
 }
 
 // NewCmd creates a cmd.
-// If an invalid flag name or option name is passed, it panics.
+// If an invalid flag name or option name is passed or a function isn't passed, it panics.
 func NewCmd(cc CmdConfig) *Cmd {
 	options := make(map[string]*CmdOption)
 	requiredOptions := make([]*CmdOption, 0)
 	optionsByAlias := make(map[string]*CmdOption)
 	flags := make(map[string]*CmdFlag)
 	flagsByAlias := make(map[string]*CmdFlag)
-	args := make([]*CmdArg, 0, len(cc.Args))
+	argsByName := make(map[string]*CmdArg, len(cc.Args))
+	argsByPos := make([]*CmdArg, 0, len(cc.Args))
+
+	if cc.Fn == nil {
+		panic(ErrMissingCmdFn)
+	}
 
 	if cc.Options != nil {
 		for i := range cc.Options {
 			opt := cc.Options[i]
+
+			opt.Name = strings.ToLower(opt.Name)
+			opt.Alias = strings.ToLower(opt.Alias)
 
 			if opt.Name == "" ||
 				!isOptionWithoutValue("--"+opt.Name) ||
 				(opt.Alias != "" && (strings.HasPrefix(opt.Alias, "-") || !isOptionWithoutValue("-"+opt.Alias))) {
 				panic(ErrInvalidOptionNameOrAlias)
 			}
-
-			opt.Name = strings.ToLower(opt.Name)
 
 			if opt.T == "" {
 				panic(ErrMissingTermTypeForTerm{Term: opt.Name})
@@ -186,7 +198,6 @@ func NewCmd(cc CmdConfig) *Cmd {
 			}
 
 			if opt.Alias != "" {
-				opt.Alias = strings.ToLower(opt.Alias)
 				optionsByAlias[opt.Alias] = &opt
 			}
 		}
@@ -196,15 +207,16 @@ func NewCmd(cc CmdConfig) *Cmd {
 		for i := range cc.Flags {
 			flag := cc.Flags[i]
 
+			flag.Name = strings.ToLower(flag.Name)
+			flag.Alias = strings.ToLower(flag.Alias)
+
 			if flag.Name == "" || !isOptionWithoutValue("--"+flag.Name) || (flag.Alias != "" && !isOptionWithoutValue("-"+flag.Alias)) {
 				panic(ErrInvalidFlagNameOrAlias)
 			}
 
-			flag.Name = strings.ToLower(flag.Name)
 			flags[flag.Name] = &flag
 
 			if flag.Alias != "" {
-				flag.Alias = strings.ToLower(flag.Alias)
 				flagsByAlias[flag.Alias] = &flag
 			}
 		}
@@ -213,18 +225,18 @@ func NewCmd(cc CmdConfig) *Cmd {
 	if cc.Args != nil {
 		for i := range cc.Args {
 			arg := cc.Args[i]
+			arg.Name = strings.ToLower(arg.Name)
 
 			if arg.Name == "" {
 				panic(ErrInvalidArgumentName{ArgumentPos: i})
 			}
 
-			arg.Name = strings.ToLower(arg.Name)
-
 			if arg.T == "" {
 				panic(ErrMissingTermTypeForTerm{Term: arg.Name})
 			}
 
-			args = append(args, &arg)
+			argsByName[arg.Name] = &arg
+			argsByPos = append(argsByPos, &arg)
 		}
 	}
 
@@ -235,7 +247,8 @@ func NewCmd(cc CmdConfig) *Cmd {
 		optionsByAlias:  optionsByAlias,
 		flags:           flags,
 		flagsByAlias:    flagsByAlias,
-		args:            args,
+		argsByPos:       argsByPos,
+		argsByName:      argsByName,
 	}
 }
 
@@ -267,12 +280,21 @@ func (c *Cmd) getOption(nameOrAlias string) *CmdOption {
 	return opt
 }
 
-func (c *Cmd) getArg(n int) *CmdArg {
-	if len(c.args) >= (n + 1) {
-		return c.args[n]
+func (c *Cmd) getArgByPos(n int) *CmdArg {
+	if len(c.argsByPos) >= (n + 1) {
+		return c.argsByPos[n]
 	}
 
 	return nil
+}
+
+func (c *Cmd) getArgByName(name string) *CmdArg {
+	arg, ok := c.argsByName[name]
+	if !ok {
+		return nil
+	}
+
+	return arg
 }
 
 // Parse parses a slice of strings.
@@ -280,7 +302,7 @@ func (c *Cmd) Parse(pp parentParser, strs []string) error {
 	tSet := &CmdTermsSet{
 		cmd:           c,
 		optionsValues: make(map[string]interface{}),
-		args:          make([]interface{}, 0),
+		argsValues:    make(map[string]interface{}),
 		flagsValues:   make(map[string]bool),
 	}
 	i := 0
@@ -396,14 +418,14 @@ func (c *Cmd) Parse(pp parentParser, strs []string) error {
 		// If it reaches this part, it means it's not an option with value
 		// (--opt=value) nor an option without value or flag (--opt). This
 		// way, we consider it as an argument.
-		nextArgPos := len(tSet.args)
+		nextArgPos := len(tSet.argsValues)
 
-		if len(c.args) >= (nextArgPos + 1) {
-			arg := c.args[nextArgPos]
+		if len(c.argsByName) >= (nextArgPos + 1) {
+			arg := c.argsByPos[nextArgPos]
 			argVal, valid := isValueValidForTermType(arg.T, str)
 
 			if valid {
-				tSet.args = append(tSet.args, argVal)
+				tSet.argsValues[arg.Name] = argVal
 
 				i++
 				continue
@@ -420,7 +442,7 @@ func (c *Cmd) Parse(pp parentParser, strs []string) error {
 		}
 	}
 
-	if len(tSet.args) != len(c.args) {
+	if len(tSet.argsValues) != len(c.argsByName) {
 		return ErrMissingArguments
 	}
 
@@ -443,34 +465,21 @@ func (c *Cmd) help(pp parentParser) string {
 
 	sb := strings.Builder{}
 
-	// Parent cmd's description.
-	switch p := pp.parser.(type) {
-	case *SubcmdsSet:
-		if item := p.items[pp.cmds[len(pp.cmds)-1]]; item.Description != "" {
-			sb.WriteString(item.Description + "\n\n")
-		}
-	case *rootCmd:
-		if p.description != "" {
-			sb.WriteString(p.description + "\n\n")
-		}
+	ppDescription := getParentParserDescription(pp)
+	if ppDescription != "" {
+		sb.WriteString(ppDescription + "\n\n")
 	}
 
 	sb.WriteString(fmt.Sprintf("Usage: %v", strings.Join(pp.cmds, " ")))
 
-	hasArgs := c.args != nil && len(c.args) > 0
+	hasArgs := c.argsByPos != nil && len(c.argsByPos) > 0
 	hasRequiredOptions := c.requiredOptions != nil && len(c.requiredOptions) > 0
 	hasOptionalOptions := c.options != nil && len(c.options) > 0 && len(c.requiredOptions) != len(c.options)
 	hasFlags := c.flags != nil && len(c.flags) > 0
 
-	largestArgHelpNameLen := 0
-
 	if hasArgs {
-		for _, arg := range c.args {
+		for _, arg := range c.argsByPos {
 			helpName := "<" + arg.Name + ">"
-
-			if len(helpName) > largestArgHelpNameLen {
-				largestArgHelpNameLen = len(helpName)
-			}
 
 			sb.WriteString(" " + helpName)
 		}
@@ -488,74 +497,66 @@ func (c *Cmd) help(pp parentParser) string {
 		sb.WriteString(" [FLAGS]")
 	}
 
-	sb.WriteString("\n")
+	sb.WriteRune('\n')
 
 	// Arguments
-	sb.WriteString("\n")
+	if hasArgs {
+		biggestArgHelpNameLen := findBiggestArgHelpNameLen(c.argsByName)
+		sb.WriteRune('\n')
 
-	for _, arg := range c.args {
-		argNameUnstyled := "<" + arg.Name + ">"
-		argNameStyled := customo.Format(argNameUnstyled, customo.AttrBold)
-		sb.WriteString(argNameStyled)
+		for _, arg := range c.argsByPos {
+			argNameStyled, argNameUnstyled := buildArgumentHelpName(arg.Name)
+			sb.WriteString(argNameStyled)
 
-		if arg.Description != "" {
-			descripFormatted := breakStringWithPadding(
-				numberOfSpacesNameAndDescription+largestArgHelpNameLen,
-				numCols,
-				' ',
-				arg.Description,
-			)
+			if arg.Description != "" {
+				descripFormatted := breakStringIntoPaddedLines(
+					numSpacesHelpNameAndDescription+biggestArgHelpNameLen,
+					' ',
+					numCols,
+					arg.Description,
+				)
 
-			sb.Write([]byte(descripFormatted[len(argNameUnstyled):]))
-		}
+				// the new slice was created so that the help name could
+				// align with the description.
+				sb.Write([]byte(descripFormatted[len(argNameUnstyled):]))
+			}
 
-		sb.WriteString("\n")
-	}
-
-	// Largest option or flag.
-	largestOptionOrFlagHelpNameUnstyledLen := 0
-
-	for _, option := range c.options {
-		_, helpNameUnstyled := buildOptionOrFlagHelpName(option.Name, option.Alias)
-		if len(helpNameUnstyled) > largestOptionOrFlagHelpNameUnstyledLen {
-			largestOptionOrFlagHelpNameUnstyledLen = len(helpNameUnstyled)
+			sb.WriteRune('\n')
 		}
 	}
 
-	for _, flag := range c.flags {
-		_, helpNameUnstyled := buildOptionOrFlagHelpName(flag.Name, flag.Alias)
-		if len(helpNameUnstyled) > largestOptionOrFlagHelpNameUnstyledLen {
-			largestOptionOrFlagHelpNameUnstyledLen = len(helpNameUnstyled)
-		}
-	}
+	// Biggest option or flag's name length.
+	biggestOptionOrFlagHelpNameLen := findBiggestOptionOrFlagHelpNameLen(c.options, c.flags)
 
 	// Required options
 	if hasRequiredOptions {
-		sb.WriteString("\n")
+		sb.WriteRune('\n')
 		sb.WriteString("OPTIONS is one or more of:\n")
 
 		for _, option := range c.requiredOptions {
 			helpNameStyled, helpNameUnstyled := buildOptionOrFlagHelpName(option.Name, option.Alias)
-			sb.WriteString(helpIndentation + helpNameStyled)
+			sb.WriteString(helpIndentationSpaces + helpNameStyled)
 
 			if option.Description != "" {
-				descripFormatted := breakStringWithPadding(
-					len(helpIndentation)+numberOfSpacesNameAndDescription+largestOptionOrFlagHelpNameUnstyledLen,
-					numCols,
+				descripFormatted := breakStringIntoPaddedLines(
+					helpIndentationNumSpaces+
+						numSpacesHelpNameAndDescription+
+						biggestOptionOrFlagHelpNameLen,
 					' ',
+					numCols,
 					option.Description,
 				)
 
-				sb.Write([]byte(descripFormatted[len(helpNameUnstyled)+len(helpIndentation):]))
+				sb.Write([]byte(descripFormatted[len(helpNameUnstyled)+helpIndentationNumSpaces:]))
 			}
 
-			sb.WriteString("\n")
+			sb.WriteRune('\n')
 		}
 	}
 
 	// Optional options
 	if hasOptionalOptions {
-		sb.WriteString("\n")
+		sb.WriteRune('\n')
 		sb.WriteString("[OPTIONS] is one or more of:\n")
 
 		for _, option := range c.options {
@@ -564,44 +565,44 @@ func (c *Cmd) help(pp parentParser) string {
 			}
 
 			helpNameStyled, helpNameUnstyled := buildOptionOrFlagHelpName(option.Name, option.Alias)
-			sb.WriteString(helpIndentation + helpNameStyled)
+			sb.WriteString(helpIndentationSpaces + helpNameStyled)
 
 			if option.Description != "" {
-				descripFormatted := breakStringWithPadding(
-					len(helpIndentation)+numberOfSpacesNameAndDescription+largestOptionOrFlagHelpNameUnstyledLen,
-					numCols,
+				descripFormatted := breakStringIntoPaddedLines(
+					helpIndentationNumSpaces+numSpacesHelpNameAndDescription+biggestOptionOrFlagHelpNameLen,
 					' ',
+					numCols,
 					option.Description,
 				)
 
-				sb.Write([]byte(descripFormatted[len(helpNameUnstyled)+len(helpIndentation):]))
+				sb.Write([]byte(descripFormatted[len(helpNameUnstyled)+helpIndentationNumSpaces:]))
 			}
 
-			sb.WriteString("\n")
+			sb.WriteRune('\n')
 		}
 	}
 
 	// Flags
 	if hasFlags {
-		sb.WriteString("\n")
+		sb.WriteRune('\n')
 		sb.WriteString("[FLAGS] is one or more of:\n")
 
 		for _, flag := range c.flags {
 			helpNameStyled, helpNameUnstyled := buildOptionOrFlagHelpName(flag.Name, flag.Alias)
-			sb.WriteString(helpIndentation + helpNameStyled)
+			sb.WriteString(helpIndentationSpaces + helpNameStyled)
 
 			if flag.Description != "" {
-				descripFormatted := breakStringWithPadding(
-					len(helpIndentation)+numberOfSpacesNameAndDescription+largestOptionOrFlagHelpNameUnstyledLen,
-					numCols,
+				descripFormatted := breakStringIntoPaddedLines(
+					helpIndentationNumSpaces+numSpacesHelpNameAndDescription+biggestOptionOrFlagHelpNameLen,
 					' ',
+					numCols,
 					flag.Description,
 				)
 
-				sb.Write([]byte(descripFormatted[len(helpNameUnstyled)+len(helpIndentation):]))
+				sb.Write([]byte(descripFormatted[len(helpNameUnstyled)+helpIndentationNumSpaces:]))
 			}
 
-			sb.WriteString("\n")
+			sb.WriteRune('\n')
 		}
 	}
 

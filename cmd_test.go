@@ -14,9 +14,9 @@ func TestCmd(t *testing.T) {
 		intOpts    map[string]int
 		floatOpts  map[string]float64
 		stringOpts map[string]string
-		intArgs    []int
-		floatArgs  []float64
-		stringArgs []string
+		intArgs    map[string]int
+		floatArgs  map[string]float64
+		stringArgs map[string]string
 		flags      map[string]bool
 	}{
 		{
@@ -47,7 +47,7 @@ func TestCmd(t *testing.T) {
 			flags: map[string]bool{
 				"line": true,
 			},
-			stringArgs: []string{"foobar"},
+			stringArgs: map[string]string{"first": "foobar"},
 		},
 		{
 			config: CmdConfig{
@@ -63,7 +63,7 @@ func TestCmd(t *testing.T) {
 			stringOpts: map[string]string{
 				"title": "salary",
 			},
-			floatArgs: []float64{180.87},
+			floatArgs: map[string]float64{"first": 180.87},
 		},
 		{
 			config: CmdConfig{
@@ -96,7 +96,7 @@ func TestCmd(t *testing.T) {
 			stringOpts: map[string]string{
 				"title": "first",
 			},
-			intArgs: []int{985},
+			intArgs: map[string]int{"first": 985},
 		},
 		{
 			config: CmdConfig{

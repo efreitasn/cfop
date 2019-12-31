@@ -14,6 +14,18 @@ var ErrInvalidFlagNameOrAlias = errors.New("cfp: invalid flag name or flag alias
 // ErrInvalidTermType indicates that an invalid term type was provided.
 var ErrInvalidTermType = errors.New("cfp: invalid term type")
 
+// ErrMissingRootCmdName indicates that a name for the root cmd wasn't provided.
+var ErrMissingRootCmdName = errors.New("cfp: missing name for root cmd")
+
+// ErrMissingSubcmdName indicates that a name for a subcmd wasn't provided.
+var ErrMissingSubcmdName = errors.New("cfp: missing name for subcmd")
+
+// ErrMissingSubcmdParser indicates that a parser for a subcmd wasn't provided.
+var ErrMissingSubcmdParser = errors.New("cfp: missing parser for subcmd")
+
+// ErrMissingCmdFn indicates that a function for a cmd wasn't provided.
+var ErrMissingCmdFn = errors.New("cfp: missing function for cmd")
+
 // ErrMissingTermTypeForTerm indicates that a term's type wasn't provided.
 type ErrMissingTermTypeForTerm struct {
 	Term string

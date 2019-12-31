@@ -63,10 +63,7 @@ func TestSubcmdsSet(t *testing.T) {
 				subcmdsParsers[subcmdName] = mockParser{
 					ch: subcmdsChs[subcmdName],
 				}
-				set.Add(Subcmd{
-					Name:   subcmdName,
-					Parser: subcmdsParsers[subcmdName],
-				})
+				set.Add(subcmdName, "", subcmdsParsers[subcmdName])
 			}
 
 			err := set.Parse(parentParser{

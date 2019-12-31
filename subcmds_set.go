@@ -25,6 +25,14 @@ func NewSubcmdsSet(items ...Subcmd) *SubcmdsSet {
 	for i := range items {
 		item := items[i]
 
+		if item.Name == "" {
+			panic(ErrMissingSubcmdName)
+		}
+
+		if item.Parser == nil {
+			panic(ErrMissingSubcmdParser)
+		}
+
 		itemsMap[item.Name] = &item
 	}
 
@@ -32,12 +40,25 @@ func NewSubcmdsSet(items ...Subcmd) *SubcmdsSet {
 }
 
 // Add adds a subcmd to the set.
-func (ss *SubcmdsSet) Add(item Subcmd) {
+// If name == "" or parser == nil, it panics.
+func (ss *SubcmdsSet) Add(name, description string, parser Parser) {
+	if name == "" {
+		panic(ErrMissingSubcmdName)
+	}
+
+	if parser == nil {
+		panic(ErrMissingSubcmdParser)
+	}
+
 	if ss.items == nil {
 		ss.items = make(map[string]*Subcmd)
 	}
 
-	ss.items[item.Name] = &item
+	ss.items[name] = &Subcmd{
+		Name:        name,
+		Description: description,
+		Parser:      parser,
+	}
 }
 
 // Parse parses a slice of strings.
@@ -86,16 +107,9 @@ func (ss *SubcmdsSet) Parse(pp parentParser, strs []string) error {
 func (ss *SubcmdsSet) help(pp parentParser) string {
 	sb := strings.Builder{}
 
-	// Parent cmd's description.
-	switch p := pp.parser.(type) {
-	case *SubcmdsSet:
-		if item := p.items[pp.cmds[len(pp.cmds)-1]]; item.Description != "" {
-			sb.WriteString(item.Description + "\n\n")
-		}
-	case *rootCmd:
-		if p.description != "" {
-			sb.WriteString(p.description + "\n\n")
-		}
+	ppDescription := getParentParserDescription(pp)
+	if ppDescription != "" {
+		sb.WriteString(ppDescription + "\n\n")
 	}
 
 	sb.WriteString(fmt.Sprintf("Usage: %v SUBCMD", strings.Join(pp.cmds, " ")))
@@ -113,14 +127,14 @@ func (ss *SubcmdsSet) help(pp parentParser) string {
 	for _, item := range ss.items {
 		nameBold := customo.Format(item.Name, customo.AttrBold)
 
-		sb.WriteString(helpIndentation + nameBold)
+		sb.WriteString(helpIndentationSpaces + nameBold)
 		if item.Description != "" {
 			spaces := strings.Repeat(" ", 5+largestNameLen-len(item.Name))
 
 			sb.WriteString(spaces + item.Description)
 		}
 
-		sb.WriteString("\n")
+		sb.WriteRune('\n')
 	}
 
 	return sb.String()
