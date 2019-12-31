@@ -18,7 +18,7 @@ type Parser interface {
 	Parse(pp parentParser, strs []string) error
 }
 
-// rootCmd is a parser representing the first cmd of the chain.
+// rootCmd is a parser representing the root cmd.
 type rootCmd struct {
 	name        string
 	description string
