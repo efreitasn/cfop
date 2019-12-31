@@ -1,5 +1,11 @@
 package cfp
 
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
+
 // parentParser is a reference to the previous parser.
 type parentParser struct {
 	// cmds is a slice containing the name of each cmd executed thus far.
@@ -39,6 +45,57 @@ func getParentParserDescription(pp parentParser) string {
 	return ""
 }
 
+func introspectParser(strs []string, p Parser) []string {
+	res := make([]string, 0)
+
+	for i := 0; i < len(strs); i++ {
+		str := strs[i]
+
+		if str == "" {
+			break
+		}
+
+		switch cmdOrSet := p.(type) {
+		case *Cmd:
+			continue
+		case *SubcmdsSet:
+			item, ok := cmdOrSet.items[str]
+			if !ok {
+				return res
+			}
+
+			p = item.Parser
+			continue
+		}
+	}
+
+	switch cmdOrSet := p.(type) {
+	case *Cmd:
+		for _, opt := range cmdOrSet.options {
+			res = append(res, "--"+opt.Name)
+
+			if opt.Alias != "" {
+				res = append(res, "-"+opt.Alias)
+			}
+		}
+		for _, flag := range cmdOrSet.flags {
+			res = append(res, "--"+flag.Name)
+
+			if flag.Alias != "" {
+				res = append(res, "-"+flag.Alias)
+			}
+		}
+	case *SubcmdsSet:
+		for _, item := range cmdOrSet.items {
+			res = append(res, item.Name)
+		}
+	}
+
+	sort.Strings(res)
+
+	return res
+}
+
 // Init initiates the parsing of the CLI.
 // The first item in strs is ignored, so that
 // os.Args can be used as the strs' value, which
@@ -59,6 +116,16 @@ func Init(name, description string, strs []string, p Parser) error {
 		newStrs = make([]string, 0)
 	} else {
 		newStrs = strs[1:]
+	}
+
+	// Introspection
+	if len(newStrs) > 0 && newStrs[0] == "__introspect__" {
+		fmt.Println(strings.Join(
+			introspectParser(newStrs[1:], p),
+			" ",
+		))
+
+		return nil
 	}
 
 	return p.Parse(parentParser{
