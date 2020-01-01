@@ -66,11 +66,33 @@ It all starts with the `rootCmd` parser. This parser doesn't apply any logic on 
 
 There are three types of parsers:
 
-* **rootCmd**: represents the root cmd. It's always used as the first parser. As the first letter of its name implies, this parser is not supposed to be used explicitly by the users of this package. Instead, users should use the `Init()` function, which takes the name and the description of the root command, a list of strings (e.g. os.Args) and a parser to parse the strings coming after the root command.
+* **rootCmd**: represents the root command. It's always used as the first parser. As the first letter of its name implies, this parser is not supposed to be used explicitly by the users of this package. Instead, users should use the `Init()` function, which takes the name and the description of the root command, a list of strings (e.g. os.Args) and a parser to parse the strings coming after the root command.
 
 * **Cmd**: represents a command and contains a list of options, flags and arguments, as well as a function to be called when parsing the command.
 
 * **SubcmdsSet**: represents a map of subcommands to parsers. Besides a parser, each subcommand also has a name and a description.
+
+### Completion
+This packages provides support for shell completion. To get a space-separated list of available subcommands, options or flags, run `<rootCmd> __introspect__ <strs>` where `<rootCmd>` is the root command's name and `<strs>` is a space-separated list of strings already typed by the user up to, but not including, the current one (in bash, `$COMP_WORDS[$COMP_CWORD]`). With the return of this command, the only step left is to match the current word with each string in the list. This can be done with the `compgen` bash function. A completion bash script that makes use of the completion features provided by cfop, defaulting to filename completion in case there's no match, is as follows:
+
+```bash
+_<rootCmd>() 
+{
+    local cur opts
+    COMPREPLY=()
+    cur=$COMP_WORDS[$COMP_CWORD]
+    opts=$(<rootCmd> __introspect__ "${COMP_WORDS[@]:1:${COMP_CWORD}-1}"|awk -v OFS="\n" '$1=$1')
+
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+
+complete -o default -F _<rootCmd> <rootCmd>
+```
+
+`<rootCmd>` should be replaced by the root command's name, the same name that is passed as the first argument of the `Init()` function. Note that this script still needs to be placed in the `/etc/bash_completion.d` directory.
+
+A better introduction to bash completion can be found [here](https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion-Builtins.html).
 
 ### Example
 
