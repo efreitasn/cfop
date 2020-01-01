@@ -1,11 +1,21 @@
 # cfop
-cfop is a package to help build CLIs in go.
+cfop is a package for helping build CLIs in go.
+
+<a href="https://godoc.org/github.com/efreitasn/cfop"><img src="https://godoc.org/github.com/efreitasn/cfop?status.svg" alt="GoDoc"></a>
+
+## Features
+* Shell completion.
+* Built-in error and help messages.
+* Validation of argument types (int, float, string).
 
 ## Naming
 There's a lot of confusion regarding the terms in a CLI. This package aims to use a nomenclature that is well-known and doesn't present any ambiguity. The nomenclature is as follow:
 
-### Command (CMD)
-A command is always mapped to a function. It can have options, flags, arguments and other commands as well, called subcommands.
+### Command
+A command is always mapped to a parser. It can have options, flags, arguments and other commands as well. There's only one command per CLI and it's called the root command. Any other command after that is called a subcommand.
+
+#### Subcommand
+To be a subcommand, it must come right after the command, otherwise it'll be considered an argument to the command or to one of the command's options. Any options, flags or arguments that come after a subcommand are handled by the subcommand, and not by any previous command or subcommand.
 
 ### Option
 An option starts with `-` or `--`. Generally, the `--` is the full version (e.g. `--name`), while the `-` version is the alias version (e.g. `-n`). An option always takes an argument, which can only be of int, float or string type. This argument can be added to the option in two ways:
@@ -20,14 +30,11 @@ In the example, `opt` is the name of the option and `20` is the argument.
 ### Flag
 A flag is an option that can only be of boolean type. That way, it doesn't take an argument.
 
-### Subcommand
-A subcommand doesn't start with any special character and it's basically an argument with a function mapped to it. To be a subcommand, it must come right after the command, otherwise it'll be considered an argument to the command. Any options, flags or arguments that come after a subcommand are handled by the subcommand, and not by the command.
-
 ### Argument
 If the term is not an option or flag, nor a subcommand, it is an argument. It can be an argument to an option, to a command or to a subcommand.
 
 ### Example
-Let's take the grep command as an example to show how this nomenclature plays out:
+Let's take the `grep` command as an example to show how this nomenclature is applied:
 
 ```bash
 grep foo -n -B=20
@@ -48,3 +55,136 @@ openssl x509 -text -in root-cert.pem
 * `-text` is a flag.
 * `-in` is an option.
 * `root-cert.pem` is the argument of the `-in` option.
+
+## The package
+For the full documentation, see the [godoc page](https://godoc.org/github.com/efreitasn/cfop).
+
+### Parsers
+Each command is mapped to a parser. A parser takes a list of strings and performs parsing and validation on them. There are at least two parsers, the `rootCmd`, which is created implicitly, and the parser provided to the `Init()` function.
+
+It all starts with the `rootCmd` parser. This parser doesn't apply any logic on the list of strings, it just calls the next parser, which is the one provided to the `Init()` function. After this, the next one depends on the current one and the next string in the list, if there's one. These steps are repeated until a `Cmd` parser is reached. Once a `Cmd` parser is reached, it's just a matter of parsing flags, options and arguments, if there's any.
+
+There are three types of parsers:
+
+* **rootCmd**: represents the root cmd. It's always used as the first parser. As the first letter of its name implies, this parser is not supposed to be used explicitly by the users of this package. Instead, users should use the `Init()` function, which takes the name and the description of the root command, a list of strings (e.g. os.Args) and a parser to parse the strings coming after the root command.
+
+* **Cmd**: represents a command and contains a list of options, flags and arguments, as well as a function to be called when parsing the command.
+
+* **SubcmdsSet**: represents a map of subcommands to parsers. Besides a parser, each subcommand also has a name and a description.
+
+### Example
+
+```go
+package main
+
+import (
+  "fmt"
+  "os"
+
+  "github.com/efreitasn/cfop"
+)
+
+func main() {
+  set := cfop.NewSubcmdsSet()
+
+  set.Add(
+    "add",
+    "Adds something",
+    cfop.NewSubcmdsSet(
+      cfop.Subcmd{
+        Name:        "user",
+        Description: "Adds user",
+        Parser: cfop.NewCmd(
+          cfop.CmdConfig{
+            Fn: func(cts *cfop.CmdTermsSet) {},
+            Flags: []cfop.CmdFlag{
+              cfop.CmdFlag{
+                Name:        "admin",
+                Description: "whether the new user is an admin",
+              },
+            },
+            Args: []cfop.CmdArg{
+              cfop.CmdArg{
+                Name:        "name",
+                Description: "the name of the user",
+                T:           cfop.TermString,
+              },
+              cfop.CmdArg{
+                Name:        "email",
+                Description: "the email of the user",
+                T:           cfop.TermString,
+              },
+            },
+          },
+        ),
+      },
+    ),
+  )
+
+  set.Add(
+    "update",
+    "Updates something",
+    cfop.NewSubcmdsSet(
+      cfop.Subcmd{
+        Name:        "user",
+        Description: "Updates user",
+        Parser: cfop.NewCmd(
+          cfop.CmdConfig{
+            Fn: func(cts *cfop.CmdTermsSet) {},
+            Options: []cfop.CmdOption{
+              cfop.CmdOption{
+                Name:        "name",
+                Description: "the name of the user",
+                T:           cfop.TermString,
+              },
+              cfop.CmdOption{
+                Name:        "email",
+                Description: "the email of the user",
+                T:           cfop.TermString,
+              },
+            },
+          },
+        ),
+      },
+    ),
+  )
+
+  set.Add(
+    "remove",
+    "Removes something",
+    cfop.NewSubcmdsSet(
+      cfop.Subcmd{
+        Name:        "user",
+        Description: "Removes user",
+        Parser: cfop.NewCmd(
+          cfop.CmdConfig{
+            Fn: func(cts *cfop.CmdTermsSet) {},
+            Args: []cfop.CmdArg{
+              cfop.CmdArg{
+                Name:        "name",
+                Description: "the name of the user",
+                T:           cfop.TermString,
+              },
+            },
+          },
+        ),
+      },
+    ),
+  )
+
+  err := cfop.Init(
+    "app",
+    "An app",
+    os.Args,
+    set,
+  )
+  if err != nil {
+    fmt.Println(err)
+  }
+}
+```
+
+A graph that represents this CLI's structure is
+<div align="center">
+  <img alt="CLI graph" src="https://raw.githubusercontent.com/efreitasn/cfop/master/example_cli_graph.jpg">
+</div>
