@@ -27,7 +27,6 @@ type CmdTermsSet struct {
 // name can be either the option's name or the option's alias.
 // If the option doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetOptString(name string) string {
-	name = strings.ToLower(name)
 	opt := ct.cmd.getOption(name)
 	if opt == nil || opt.T != TermString {
 		return ""
@@ -40,7 +39,6 @@ func (ct *CmdTermsSet) GetOptString(name string) string {
 // name can be either the option's name or the option's alias.
 // If the option doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetOptInt(name string) int {
-	name = strings.ToLower(name)
 	opt := ct.cmd.getOption(name)
 	if opt == nil || opt.T != TermInt {
 		return 0
@@ -53,7 +51,6 @@ func (ct *CmdTermsSet) GetOptInt(name string) int {
 // name can be either the option's name or the option's alias.
 // If the option doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetOptFloat(name string) float64 {
-	name = strings.ToLower(name)
 	opt := ct.cmd.getOption(name)
 	if opt == nil || opt.T != TermFloat {
 		return 0
@@ -66,7 +63,6 @@ func (ct *CmdTermsSet) GetOptFloat(name string) float64 {
 // name can be either the flag's name or the flag's alias.
 // If the flag doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetFlag(name string) bool {
-	name = strings.ToLower(name)
 	f := ct.cmd.getFlag(name)
 	if f == nil {
 		return false
@@ -78,7 +74,6 @@ func (ct *CmdTermsSet) GetFlag(name string) bool {
 // GetArgString returns the value of the argument at n of type string.
 // If the argument doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetArgString(name string) string {
-	name = strings.ToLower(name)
 	arg := ct.cmd.getArgByName(name)
 	if arg == nil || arg.T != TermString {
 		return ""
@@ -90,7 +85,6 @@ func (ct *CmdTermsSet) GetArgString(name string) string {
 // GetArgInt returns the value of the argument at n of type intger.
 // If the argument doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetArgInt(name string) int {
-	name = strings.ToLower(name)
 	arg := ct.cmd.getArgByName(name)
 	if arg == nil || arg.T != TermInt {
 		return 0
@@ -102,7 +96,6 @@ func (ct *CmdTermsSet) GetArgInt(name string) int {
 // GetArgFloat returns the value of the argument at n of type float.
 // If the argument doesn't exist, its zero value is returned.
 func (ct *CmdTermsSet) GetArgFloat(name string) float64 {
-	name = strings.ToLower(name)
 	arg := ct.cmd.getArgByName(name)
 	if arg == nil || arg.T != TermFloat {
 		return 0
@@ -113,9 +106,9 @@ func (ct *CmdTermsSet) GetArgFloat(name string) float64 {
 
 // CmdOption is a cmd option.
 type CmdOption struct {
-	// Name is used with -- and is case-insenstive.
+	// Name is used with -- and is case-senstive.
 	Name string
-	// Alias is used with - and is case-insenstive.
+	// Alias is used with - and is case-senstive.
 	Alias       string
 	Description string
 	T           TermType
@@ -124,16 +117,16 @@ type CmdOption struct {
 
 // CmdFlag is a cmd flag.
 type CmdFlag struct {
-	// Name is used with -- and is case-insenstive.
+	// Name is used with -- and is case-senstive.
 	Name string
-	// Alias is used with - and is case-insenstive.
+	// Alias is used with - and is case-senstive.
 	Alias       string
 	Description string
 }
 
 // CmdArg is a cmd argument.
 type CmdArg struct {
-	// Name is used when printing the help message and is case-insenstive.
+	// Name is used when printing the help message and is case-senstive.
 	Name        string
 	Description string
 	T           TermType
@@ -178,9 +171,6 @@ func NewCmd(cc CmdConfig) *Cmd {
 		for i := range cc.Options {
 			opt := cc.Options[i]
 
-			opt.Name = strings.ToLower(opt.Name)
-			opt.Alias = strings.ToLower(opt.Alias)
-
 			if opt.Name == "" ||
 				!isOptionWithoutValue("--"+opt.Name) ||
 				(opt.Alias != "" && (strings.HasPrefix(opt.Alias, "-") || !isOptionWithoutValue("-"+opt.Alias))) {
@@ -207,9 +197,6 @@ func NewCmd(cc CmdConfig) *Cmd {
 		for i := range cc.Flags {
 			flag := cc.Flags[i]
 
-			flag.Name = strings.ToLower(flag.Name)
-			flag.Alias = strings.ToLower(flag.Alias)
-
 			if flag.Name == "" || !isOptionWithoutValue("--"+flag.Name) || (flag.Alias != "" && !isOptionWithoutValue("-"+flag.Alias)) {
 				panic(ErrInvalidFlagNameOrAlias)
 			}
@@ -225,7 +212,6 @@ func NewCmd(cc CmdConfig) *Cmd {
 	if cc.Args != nil {
 		for i := range cc.Args {
 			arg := cc.Args[i]
-			arg.Name = strings.ToLower(arg.Name)
 
 			if arg.Name == "" {
 				panic(ErrInvalidArgumentName{ArgumentPos: i})

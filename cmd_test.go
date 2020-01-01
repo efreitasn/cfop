@@ -30,7 +30,7 @@ func TestCmd(t *testing.T) {
 					{"line", "l", ""},
 				},
 				Args: []CmdArg{
-					{"First", "", TermString},
+					{"first", "", TermString},
 				},
 			},
 			strs: []string{"-n", "John", "-y=1990", "foobar", "-l", "--salary", "500.85"},
@@ -55,7 +55,7 @@ func TestCmd(t *testing.T) {
 					{"title", "t", "", TermString, false},
 				},
 				Args: []CmdArg{
-					{"First", "", TermFloat},
+					{"first", "", TermFloat},
 				},
 			},
 			strs: []string{"--title", "salary", "180.87"},
@@ -71,7 +71,7 @@ func TestCmd(t *testing.T) {
 					{"title", "t", "", TermString, false},
 				},
 				Args: []CmdArg{
-					{"First", "", TermInt},
+					{"first", "", TermInt},
 				},
 			},
 			strs: []string{"--title", "salary", "180.87"},
@@ -88,7 +88,7 @@ func TestCmd(t *testing.T) {
 					{"title", "t", "", TermString, false},
 				},
 				Args: []CmdArg{
-					{"First", "", TermInt},
+					{"first", "", TermInt},
 				},
 			},
 			strs: []string{"--title", "first", "985"},
@@ -108,7 +108,7 @@ func TestCmd(t *testing.T) {
 					{"line", "l", ""},
 				},
 				Args: []CmdArg{
-					{"First", "", TermString},
+					{"first", "", TermString},
 				},
 			},
 			strs: []string{"-n", "John", "--year=foo", "foobar"},
@@ -127,7 +127,7 @@ func TestCmd(t *testing.T) {
 					{"line", "l", ""},
 				},
 				Args: []CmdArg{
-					{"First", "", TermString},
+					{"first", "", TermString},
 				},
 			},
 			strs: []string{"-n", "John", "--year", "foo", "foobar"},
@@ -176,7 +176,7 @@ func TestCmd(t *testing.T) {
 					{"line", "l", ""},
 				},
 				Args: []CmdArg{
-					{"First", "", TermString},
+					{"first", "", TermString},
 				},
 			},
 			strs: []string{"-n", "John", "--year=1990", "--what", "foobar"},
@@ -198,7 +198,7 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Args: []CmdArg{
-					{"First", "", TermFloat},
+					{"first", "", TermFloat},
 					{"Second", "", TermInt},
 				},
 				Flags: []CmdFlag{
@@ -211,7 +211,7 @@ func TestCmd(t *testing.T) {
 		{
 			config: CmdConfig{
 				Args: []CmdArg{
-					{"First", "", TermInt},
+					{"first", "", TermInt},
 				},
 				Options: []CmdOption{
 					{"name", "n", "", TermString, true},
