@@ -83,10 +83,9 @@ _<rootCmd>()
 {
     local cur opts
     COMPREPLY=()
-    cur=$COMP_WORDS[$COMP_CWORD]
-    opts=$(<rootCmd> __introspect__ "${COMP_WORDS[@]:1:${COMP_CWORD}-1}"|awk -v OFS="\n" '$1=$1')
+    opts=$(<rootCmd> __introspect__ "${COMP_WORDS[@]:1:$COMP_CWORD-1}")
 
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    COMPREPLY=( $(compgen -W "${opts}" -- "${COMP_WORDS[1]}") )
     return 0
 }
 
