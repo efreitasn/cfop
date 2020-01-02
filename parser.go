@@ -46,7 +46,7 @@ func getParentParserDescription(pp parentParser) string {
 }
 
 func introspectParser(strs []string, p Parser) []string {
-	res := make([]string, 0)
+	res := []string{"--help", "-h"}
 
 	for i := 0; i < len(strs); i++ {
 		str := strs[i]
