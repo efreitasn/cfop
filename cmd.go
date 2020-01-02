@@ -106,20 +106,21 @@ func (ct *CmdTermsSet) GetArgFloat(name string) float64 {
 
 // CmdOption is a cmd option.
 type CmdOption struct {
-	// Name is used with -- and is case-senstive.
+	// Name is used with --, is case-sensitive and cannot start with -.
 	Name string
-	// Alias is used with - and is case-senstive.
+	// Alias is used with -, is case-senstitive and cannot start with -.
 	Alias       string
 	Description string
-	T           TermType
-	Required    bool
+	// T is the type of the option.
+	T        TermType
+	Required bool
 }
 
 // CmdFlag is a cmd flag.
 type CmdFlag struct {
-	// Name is used with -- and is case-senstive.
+	// Name is used with --, is case-senstive and cannot start with.
 	Name string
-	// Alias is used with - and is case-senstive.
+	// Alias is used with -, is case-senstive and cannot start with -.
 	Alias       string
 	Description string
 }
@@ -129,7 +130,8 @@ type CmdArg struct {
 	// Name is used when printing the help message and is case-senstive.
 	Name        string
 	Description string
-	T           TermType
+	// T is the type of the argument.
+	T TermType
 }
 
 // CmdConfig is a config used to create a cmd.
@@ -173,7 +175,7 @@ func NewCmd(cc CmdConfig) *Cmd {
 
 			if opt.Name == "" ||
 				!isOptionWithoutValue("--"+opt.Name) ||
-				(opt.Alias != "" && (strings.HasPrefix(opt.Alias, "-") || !isOptionWithoutValue("-"+opt.Alias))) {
+				(opt.Alias != "" && strings.HasPrefix(opt.Alias, "-")) {
 				panic(ErrInvalidOptionNameOrAlias)
 			}
 
