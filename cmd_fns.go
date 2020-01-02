@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-var optionWithValueRegExp = regexp.MustCompile("^--?((?:[a-zA-Z]|[0-9])+)=(.+)?$")
-var optionWithoutValueRegExp = regexp.MustCompile("^--?((?:[a-zA-Z]|[0-9])+)$")
-var optionWithOrWithoutValueRegExp = regexp.MustCompile("^--?((?:[a-zA-Z]|[0-9])+)(?:(?:=(.+))|=)?$")
+var optionWithValueRegExp = regexp.MustCompile("^--?([^-]{1}[^=\\s]*)=([^\\s=]+)?$")
+var optionWithoutValueRegExp = regexp.MustCompile("^--?([^-]{1}[^=\\s]*)$")
+var optionWithOrWithoutValueRegExp = regexp.MustCompile("^--?([^-]{1}[^=\\s]*)(?:=([^\\s=]+)?)?$")
 
 // isValueValidForTermType returns whether value is valid for a given t.
 func isValueValidForTermType(t TermType, value string) (interface{}, bool) {
