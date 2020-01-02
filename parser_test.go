@@ -59,7 +59,7 @@ func TestInstrospectParser(t *testing.T) {
 				},
 			),
 			[]string{"foo", "--y"},
-			[]string{"--year", "-y"},
+			[]string{"--help", "--year", "-h", "-y"},
 		},
 		{
 			NewSubcmdsSet(
@@ -84,7 +84,7 @@ func TestInstrospectParser(t *testing.T) {
 				},
 			),
 			[]string{"foo"},
-			[]string{"--age", "--year", "-a", "-y"},
+			[]string{"--age", "--help", "--year", "-a", "-h", "-y"},
 		},
 		{
 			NewSubcmdsSet(
@@ -109,7 +109,7 @@ func TestInstrospectParser(t *testing.T) {
 				},
 			),
 			[]string{"foo", "--age", "1990"},
-			[]string{"--age", "--year", "-a", "-y"},
+			[]string{"--age", "--help", "--year", "-a", "-h", "-y"},
 		},
 		{
 			NewSubcmdsSet(
@@ -134,7 +134,7 @@ func TestInstrospectParser(t *testing.T) {
 				},
 			),
 			[]string{},
-			[]string{"foo"},
+			[]string{"--help", "-h", "foo"},
 		},
 		{
 			NewSubcmdsSet(
@@ -159,7 +159,7 @@ func TestInstrospectParser(t *testing.T) {
 				},
 			),
 			[]string{""},
-			[]string{"foo"},
+			[]string{"--help", "-h", "foo"},
 		},
 	}
 
