@@ -63,13 +63,13 @@ openssl x509 -text -in root-cert.pem
 For the full documentation, see the [godoc page](https://godoc.org/github.com/efreitasn/cfop).
 
 ### Parsers
-Each command is mapped to a parser. A parser takes a list of terms and performs parsing and validation on them. There are at least two parsers, the `rootCmd`, which is created implicitly, and the parser provided to the `Init()` function.
+Each command is mapped to a parser. A parser takes a list of terms and performs parsing and validation on them. There are at least two parsers, the `rootCmd`, which is created implicitly, and the parser provided to the `Init` function.
 
-It all starts with the `rootCmd` parser. This parser doesn't apply any logic on the list of terms, it just calls the next parser, which is the one provided to the `Init()` function. After this, the next one depends on the current one and the next term in the list, if there's one. These steps are repeated until a `Cmd` parser is reached. Once a `Cmd` parser is reached, it's just a matter of parsing flags, options and arguments, if there's any.
+It all starts with the `rootCmd` parser. This parser doesn't apply any logic on the list of terms, it just calls the next parser, which is the one provided to the `Init` function. After this, the next one depends on the current one and the next term in the list, if there's one. These steps are repeated until a `Cmd` parser is reached. Once a `Cmd` parser is reached, it's just a matter of parsing flags, options and arguments, if there's any.
 
 There are three types of parsers:
 
-* **rootCmd**: represents the root command. It's always used as the first parser. As the first letter of its name implies, this parser is not supposed to be used explicitly by the users of this package. Instead, users should use the `Init()` function, which takes the name and the description of the root command, a list of terms (e.g. os.Args) and a parser to parse the terms coming after the root command.
+* **rootCmd**: represents the root command. It's always used as the first parser. As the first letter of its name implies, this parser is not supposed to be used explicitly by the users of this package. Instead, users should use the `Init` function, which takes the name and the description of the root command, a list of terms (e.g. os.Args) and a parser to parse the terms coming after the root command.
 
 * **Cmd**: represents a command and contains a list of options, flags and arguments, as well as a function to be called when parsing the command.
 
@@ -81,18 +81,17 @@ This packages provides support for shell completion. To get a space-separated li
 ```bash
 _<rootCmd>() 
 {
-    local cur opts
+    local opts
     COMPREPLY=()
     opts=$(<rootCmd> __introspect__ "${COMP_WORDS[@]:1:$COMP_CWORD-1}")
 
-    COMPREPLY=( $(compgen -W "${opts}" -- "${COMP_WORDS[1]}") )
-    return 0
+    COMPREPLY=($(compgen -W "${opts}" -- "${COMP_WORDS[1]}"))
 }
 
 complete -o default -F _<rootCmd> <rootCmd>
 ```
 
-`<rootCmd>` should be replaced by the root command's name, the same name that is passed as the first argument of the `Init()` function. Note that this script still needs to be placed in the `/etc/bash_completion.d` directory.
+`<rootCmd>` should be replaced by the root command's name, the same name that is passed as the first argument of the `Init` function. Note that this script still needs to be placed in the `/etc/bash_completion.d` directory.
 
 A better introduction to bash completion can be found [here](https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion-Builtins.html).
 
