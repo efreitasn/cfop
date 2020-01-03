@@ -64,7 +64,7 @@ Cmd is reached. An example is:
 In this example, testing is the root command's name and it has two subcommands: foo and foobar. The foobar
 subcommand uses a Cmd parser, which has only one option, called name. The foo subcommand is a SubcmdsSet parser,
 which means that it also has one or more subcommands. In this case, it has one subcommand named bar, which is a
-'Cmd'. Now, when run
+Cmd. Now, when run
 
 	testing foo bar
 
