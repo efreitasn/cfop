@@ -105,6 +105,11 @@ func (ss *SubcmdsSet) Parse(pp parentParser, strs []string) error {
 }
 
 func (ss *SubcmdsSet) help(pp parentParser) string {
+	numCols, err := getTermNumCols()
+	if err != nil {
+		numCols = 67
+	}
+
 	sb := strings.Builder{}
 
 	ppDescription := getParentParserDescription(pp)
@@ -116,11 +121,11 @@ func (ss *SubcmdsSet) help(pp parentParser) string {
 	sb.WriteString("\n\n")
 	sb.WriteString("SUBCMD is one of:\n")
 
-	largestNameLen := 0
+	biggestNameLen := 0
 
 	for _, item := range ss.items {
-		if len(item.Name) > largestNameLen {
-			largestNameLen = len(item.Name)
+		if len(item.Name) > biggestNameLen {
+			biggestNameLen = len(item.Name)
 		}
 	}
 
@@ -129,9 +134,18 @@ func (ss *SubcmdsSet) help(pp parentParser) string {
 
 		sb.WriteString(helpIndentationSpaces + nameBold)
 		if item.Description != "" {
-			spaces := strings.Repeat(" ", 5+largestNameLen-len(item.Name))
+			descripFormatted := breakStringIntoPaddedLines(
+				helpIndentationNumSpaces+
+					numSpacesHelpNameAndDescription+
+					biggestNameLen,
+				' ',
+				numCols,
+				item.Description,
+			)
 
-			sb.WriteString(spaces + item.Description)
+			// the new slice was created so that the help name could
+			// align with the description.
+			sb.Write([]byte(descripFormatted[len(item.Name)+helpIndentationNumSpaces:]))
 		}
 
 		sb.WriteRune('\n')
