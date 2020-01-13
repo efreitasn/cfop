@@ -5,17 +5,19 @@ import (
 	"os"
 	"strings"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/sys/unix"
 )
 
 // getTermNumCols returns the number of columns of the terminal.
+// If an error occur while getting the number of columns, the default
+// value (67) is returned.
 func getTermNumCols() (int, error) {
-	cols, _, err := terminal.GetSize(int(os.Stdout.Fd()))
+	ws, err := unix.IoctlGetWinsize(int(os.Stdout.Fd()), unix.TIOCGWINSZ)
 	if err != nil {
-		return 0, err
+		return 67, err
 	}
 
-	return cols, nil
+	return int(ws.Col), nil
 }
 
 // breakStringIntoPaddedLines breaks str into lines padded with pad padChar whose length <= maxCharsPerLine.

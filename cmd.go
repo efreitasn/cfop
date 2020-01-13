@@ -446,10 +446,7 @@ func (c *Cmd) Parse(pp parentParser, strs []string) error {
 }
 
 func (c *Cmd) help(pp parentParser) string {
-	numCols, err := getTermNumCols()
-	if err != nil {
-		numCols = 67
-	}
+	numCols, _ := getTermNumCols()
 
 	sb := strings.Builder{}
 

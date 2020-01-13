@@ -105,10 +105,7 @@ func (ss *SubcmdsSet) Parse(pp parentParser, strs []string) error {
 }
 
 func (ss *SubcmdsSet) help(pp parentParser) string {
-	numCols, err := getTermNumCols()
-	if err != nil {
-		numCols = 67
-	}
+	numCols, _ := getTermNumCols()
 
 	sb := strings.Builder{}
 
