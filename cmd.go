@@ -32,7 +32,12 @@ func (ct *CmdTermsSet) GetOptString(name string) string {
 		return ""
 	}
 
-	return (ct.optionsValues[opt.Name]).(string)
+	value, ok := ct.optionsValues[opt.Name]
+	if !ok {
+		return ""
+	}
+
+	return (value).(string)
 }
 
 // GetOptInt returns the value of an option of type integer.
@@ -44,7 +49,12 @@ func (ct *CmdTermsSet) GetOptInt(name string) int {
 		return 0
 	}
 
-	return (ct.optionsValues[opt.Name]).(int)
+	value, ok := ct.optionsValues[opt.Name]
+	if !ok {
+		return 0
+	}
+
+	return (value).(int)
 }
 
 // GetOptFloat returns the value of an option of type float.
@@ -56,7 +66,12 @@ func (ct *CmdTermsSet) GetOptFloat(name string) float64 {
 		return 0
 	}
 
-	return (ct.optionsValues[opt.Name]).(float64)
+	value, ok := ct.optionsValues[opt.Name]
+	if !ok {
+		return 0
+	}
+
+	return (value).(float64)
 }
 
 // GetFlag returns the value of a flag.
