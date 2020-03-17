@@ -76,22 +76,19 @@ There are three types of parsers:
 * **SubcmdsSet**: represents a map of subcommands to parsers. Besides a parser, each subcommand also has a name and a description.
 
 ### Completion
-This packages provides support for shell completion. To get a space-separated list of available subcommands, options or flags, run `<rootCmd> __introspect__ <strs>` where `<rootCmd>` is the root command's name and `<strs>` is a space-separated list of terms already typed by the user up to, but not including, the current one (in bash, `$COMP_WORDS[$COMP_CWORD]`). With the return of this command, the only step left is to match the current term with each tern in the list. This can be done with the `compgen` bash function. A completion bash script that makes use of the completion features provided by cfop, defaulting to filename completion in case there's no match, is as follows:
+This package provides support for shell completion. To get a space-separated list of available subcommands, options or flags, run `<rootCmd> __introspect__ <strs>` where `<rootCmd>` is the root command's name and `<strs>` is a space-separated list of terms already typed by the user from the second term up to, but not including, the current one (`${COMP_WORDS[@]:1:$COMP_CWORD-1}`). With the return of this command, the only step left is to match the current term with each term in the list. This can be done with the `compgen` function. A completion script that makes use of the completion features provided by cfop can be obtained by running `<rootCmd> completion bash` or `<rootCmd> completion zsh`.
+
+To apply the completion to your current terminal window, run:
 
 ```bash
-_<rootCmd>() 
-{
-    local opts
-    COMPREPLY=()
-    opts=$(<rootCmd> __introspect__ "${COMP_WORDS[@]:1:$COMP_CWORD-1}")
+# bash
+source <(<rootCmd> completion bash)
 
-    COMPREPLY=($(compgen -W "${opts}" -- "${COMP_WORDS[1]}"))
-}
-
-complete -o default -F _<rootCmd> <rootCmd>
+# zsh
+source <(<rootCmd> completion zsh)
 ```
 
-`<rootCmd>` should be replaced by the root command's name, the same name that is passed as the first argument of the `Init` function. Note that this script still needs to be placed in the `/etc/bash_completion.d` directory.
+Note that this is only valid for your current terminal window. If you want the completion to be avaliable in any terminal window, which is generally the case, put one of the above lines in your `.bashrc` or `.zshrc`.
 
 A better introduction to bash completion can be found [here](https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion-Builtins.html).
 

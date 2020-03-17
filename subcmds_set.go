@@ -2,8 +2,9 @@ package cfop
 
 import (
 	"fmt"
-	"github.com/efreitasn/customo"
 	"strings"
+
+	"github.com/efreitasn/customo"
 )
 
 // Subcmd is a subcmd.
@@ -127,6 +128,10 @@ func (ss *SubcmdsSet) help(pp parentParser) string {
 	}
 
 	for _, item := range ss.items {
+		if item.Name == "completion" {
+			continue
+		}
+
 		nameBold := customo.Format(item.Name, customo.AttrBold)
 
 		sb.WriteString(helpIndentationSpaces + nameBold)

@@ -128,8 +128,32 @@ func Init(name, description string, strs []string, p Parser) error {
 		return nil
 	}
 
-	return p.Parse(parentParser{
+	pp := parentParser{
 		cmds:   []string{name},
 		parser: rp,
-	}, newStrs)
+	}
+	completionParser := newCompletionParser(name)
+
+	switch subcmdsSetOrCmd := p.(type) {
+	case *SubcmdsSet:
+		subcmdsSetOrCmd.Add(
+			"completion",
+			"prints completion for a shell",
+			completionParser,
+		)
+	case *Cmd:
+		if newStrs[0] == "completion" {
+			set := NewSubcmdsSet(
+				Subcmd{
+					Name:        "completion",
+					Description: "prints completion for a shell",
+					Parser:      completionParser,
+				},
+			)
+
+			return set.Parse(pp, newStrs)
+		}
+	}
+
+	return p.Parse(pp, newStrs)
 }
